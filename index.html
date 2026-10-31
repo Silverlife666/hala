@@ -67,10 +67,8 @@ function render(){
   if(o.roll-o.packed-o.pack_waste<0)tags.push('spakowano więcej niż rolek');
   if(o.wip2<0)tags.push('pobrano do klejenia więcej niż spakowano');
   if(!o.in_e1)tags.push('brak na liście Etapu 1');
-  else if(!o.in_e3)tags.push('brak na liście Etapu 3');
-  else if(o.closed_e3!==o.closed)tags.push('status różni się: Etap 1 '+(o.closed?'zamknięte':'otwarte')+', Etap 3 '+(o.closed_e3?'zamknięte':'otwarte'));
   return `<div class="o ${o.closed?'closed':''}"><div class="nm">${esc(o.name)}<small>${o.target?'cel '+n(o.target)+' szt.':'bez ilości docelowej'}${o.closed?' · zamknięte':''}</small>${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`
-  +bar('roll',o.roll,base)+wip(o.wip1,'a')+bar('pack',o.packed,base,o.pack_waste?' · braki '+n(o.pack_waste):'')+wip(o.wip2,'b')+bar('glue',o.glued,base,o.rejected?' · odrz. '+n(o.rejected):'')+`</div>`}).join(''):'<div class="empty">Brak zleceń do pokazania.</div>';
+  +bar('roll',o.roll,base)+wip(o.wip1,'a')+bar('pack',o.packed,base,o.pack_waste?' · braki '+n(o.pack_waste):'')+wip(o.wip2,'b')+bar('glue',o.glued_all??o.glued,base,[o.rejected?'odrz. '+n(o.rejected):'',o.glued_legacy?'w tym '+n(o.glued_legacy)+' poza WIP':''].filter(Boolean).map(t=>' · '+t).join(''))+`</div>`}).join(''):'<div class="empty">Brak zleceń do pokazania.</div>';
  $('upd').textContent='Dane z '+hm(at);
 }
 async function load(){
