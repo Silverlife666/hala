@@ -64,8 +64,10 @@ const URL_HALA='https://hjadatjvyrjexgmicggi.supabase.co/functions/v1/hala-data'
    1.0.0 wersja bazowa
    1.0.1 ukrywanie pustych zleceń spoza listy Etapu 1
    1.1.0 inwentaryzacja WIP (policzone sztuki vs stan systemowy)
-   1.1.1 numer wersji w nagłówku */
-const APP_VERSION='1.1.1';
+   1.1.1 numer wersji w nagłówku
+   1.2.0 automatyczne przeładowanie po wdrożeniu nowej wersji; ostrzeżenie o nieaktualnych danych
+   1.2.1 ostrzeżenie czyta pole generated z hala-data (czas serwera vs zegar komputera) */
+const APP_VERSION='1.2.1',STALE_MIN=10,VER_EVERY=300000;
 let data=null,at=0,showClosed=false,invMode=false,inv={};
 const INV_KEY='hala_inv_v1';
 try{inv=JSON.parse(localStorage.getItem(INV_KEY)||'{}')||{}}catch(e){inv={}}
@@ -111,7 +113,10 @@ async function load(){
   const r=await fetch(URL_HALA+'?t='+Date.now(),{cache:'no-store',signal:c.signal});clearTimeout(t);
   if(!r.ok)throw new Error('HTTP '+r.status);
   const j=await r.json();if(!Array.isArray(j.orders))throw new Error('zły format');
-  data=j;at=Date.now();$('warn').style.display='none';if(!(document.activeElement&&document.activeElement.dataset&&document.activeElement.dataset.k))render();
+  data=j;at=Date.now();
+  const ts=+j.generated;
+  if(isFinite(ts)&&ts>0&&Math.abs(Date.now()-ts)>STALE_MIN*60000){$('warn').style.display='block';$('warn').textContent='Odpowiedź serwera ma czas '+hm(ts)+', a ten komputer ma '+hm(Date.now())+'. Dane mogą być nieaktualne albo zegar komputera jest przestawiony.'}
+  else $('warn').style.display='none';if(!(document.activeElement&&document.activeElement.dataset&&document.activeElement.dataset.k))render();
  }catch(e){
   $('warn').style.display='block';
   $('warn').textContent='Brak połączenia z serwerem ('+e.message+').'+(data?' Widać dane z '+hm(at)+'.':'');
@@ -128,5 +133,17 @@ $('list').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset&&e
 $('list').addEventListener('focusout',()=>setTimeout(()=>{const a=document.activeElement;if(!(a&&a.dataset&&a.dataset.k))render()},0));
 $('tg').onclick=()=>{showClosed=!showClosed;$('tg').textContent=showClosed?'Ukryj zamknięte':'Pokaż zamknięte';$('tg').setAttribute('aria-pressed',showClosed);render()};
 setInterval(()=>{$('clock').textContent=new Date().toLocaleString('pl-PL',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})},1000);
+async function checkVersion(){
+ try{
+  const r=await fetch(location.href.split('#')[0].split('?')[0]+'?v='+Date.now(),{cache:'no-store'});
+  if(!r.ok)return;
+  const m=(await r.text()).match(/APP_VERSION='(\d+\.\d+\.\d+)'/);
+  if(!m||m[1]===APP_VERSION)return;
+  const a=document.activeElement;
+  if(invMode||(a&&a.dataset&&a.dataset.k))return;
+  location.reload();
+ }catch(e){}
+}
+setInterval(checkVersion,VER_EVERY);
 setInterval(load,EVERY);load();
 </script></body></html>
