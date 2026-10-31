@@ -57,7 +57,7 @@ function bar(cls,val,base,extra){const p=base>0?Math.min(100,val/base*100):0;ret
 function wip(v,cls){const c=v<0?'neg':v===0?'zero':cls;return `<div class="w ${c}">${n(v)}</div>`}
 function render(){
  if(!data){return}
- const all=data.orders,open=all.filter(o=>!o.closed);
+ const idle=o=>!o.in_e1&&![o.roll,o.packed,o.pack_waste,o.glued,o.glued_all,o.glued_legacy,o.rejected,o.wip1,o.wip2].some(v=>+v),all=data.orders.filter(o=>!idle(o)),open=all.filter(o=>!o.closed);
  $('kOpen').textContent=open.length;
  $('kW1').textContent=n(open.reduce((a,o)=>a+Math.max(o.wip1,0),0));
  $('kW2').textContent=n(open.reduce((a,o)=>a+Math.max(o.wip2,0),0));
