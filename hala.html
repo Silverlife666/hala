@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hala · przegląd zleceń</title>
+<style>
+:root{--bg:#10161d;--panel:#18212b;--line:#26323f;--tx:#e9eef3;--mut:#8b9aa9;--roll:#5aa9e6;--pack:#f0b445;--glue:#4cd0a2;--bad:#ff6b5e}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:Bahnschrift,"Segoe UI",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+header{display:flex;align-items:center;gap:2vw;padding:1.2vw 2vw;border-bottom:1px solid var(--line);flex-wrap:wrap}
+h1{font-size:clamp(20px,2.2vw,36px);margin:0;font-weight:600;letter-spacing:.01em}
+.kpis{display:flex;gap:2.4vw;margin-left:auto}
+.kpi b{display:block;font-size:clamp(24px,3vw,52px);line-height:1;font-weight:600}
+.kpi span{font-size:clamp(12px,1vw,17px);color:var(--mut)}
+.kpi.w1 b{color:var(--roll)}.kpi.w2 b{color:var(--pack)}
+.meta{text-align:right;color:var(--mut);font-size:clamp(12px,1vw,17px);line-height:1.4}
+.meta button{background:none;border:1px solid var(--line);color:var(--tx);border-radius:6px;padding:.3em .8em;font:inherit;cursor:pointer;margin-top:.3em}
+.meta button:focus-visible{outline:2px solid var(--roll);outline-offset:2px}
+#warn{display:none;background:#3a1f1c;color:#ffb4ac;padding:.6vw 2vw;font-size:clamp(13px,1.1vw,18px)}
+main{padding:1vw 2vw 3vw}
+.head,.o{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,2fr) minmax(0,.7fr) minmax(0,2fr) minmax(0,.7fr) minmax(0,2fr);gap:1.2vw;align-items:center}
+.head{color:var(--mut);font-size:clamp(12px,1vw,17px);padding:.4vw 0 .6vw}
+.o{padding:.9vw 0;border-top:1px solid var(--line)}
+.o.closed{opacity:.5}
+.nm{font-size:clamp(18px,1.9vw,32px);font-weight:600;overflow-wrap:anywhere}
+.nm small{display:block;font-weight:400;color:var(--mut);font-size:clamp(12px,.95vw,16px);margin-top:.2em}
+.tag{display:inline-block;border:1px solid var(--bad);color:var(--bad);border-radius:4px;padding:0 .4em;margin:.3em .4em 0 0;font-size:clamp(11px,.85vw,14px)}
+.bar{height:clamp(10px,1vw,18px);background:var(--panel);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%}
+.v{font-size:clamp(15px,1.5vw,26px);margin-bottom:.25em}.v em{font-style:normal;color:var(--mut);font-size:.7em}
+.roll i{background:var(--roll)}.pack i{background:var(--pack)}.glue i{background:var(--glue)}
+.w{text-align:center;font-size:clamp(22px,2.6vw,46px);font-weight:600;line-height:1}
+.w.a{color:var(--roll)}.w.b{color:var(--pack)}.w.neg{color:var(--bad)}.w.zero{color:var(--line)}
+.empty{padding:6vw 0;text-align:center;color:var(--mut);font-size:clamp(16px,1.6vw,26px)}
+@media(max-width:900px){.head{display:none}.o{grid-template-columns:1fr 1fr;gap:3vw}.nm{grid-column:1/-1}}
+</style></head><body>
+<header>
+<h1>Hala · stan zleceń</h1>
+<div class="kpis">
+<div class="kpi"><b id="kOpen">–</b><span>zleceń otwartych</span></div>
+<div class="kpi w1"><b id="kW1">–</b><span>WIP 1 (rolki → pakowanie)</span></div>
+<div class="kpi w2"><b id="kW2">–</b><span>WIP 2 (pakowanie → klejenie)</span></div>
+</div>
+<div class="meta"><div id="clock"></div><div id="upd">Ładowanie…</div><button id="tg" aria-pressed="false">Pokaż zamknięte</button></div>
+</header>
+<div id="warn" role="status"></div>
+<main>
+<div class="head"><span>Zlecenie</span><span>Etap 1 · rolki</span><span style="text-align:center">WIP 1</span><span>Etap 2 · pakowanie</span><span style="text-align:center">WIP 2</span><span>Etap 3 · klejenie</span></div>
+<div id="list"></div>
+</main>
+<script>
+const URL_HALA='https://hjadatjvyrjexgmicggi.supabase.co/functions/v1/hala-data',EVERY=30000;
+let data=null,at=0,showClosed=false;
+const $=id=>document.getElementById(id),n=x=>Math.round(x).toLocaleString('pl-PL'),
+esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
+hm=t=>new Date(t).toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
+function bar(cls,val,base,extra){const p=base>0?Math.min(100,val/base*100):0;return `<div><div class="v">${n(val)} <em>${base>0?(val/base*100).toFixed(0)+'%':''}${extra||''}</em></div><div class="bar ${cls}"><i style="width:${p}%"></i></div></div>`}
+function wip(v,cls){const c=v<0?'neg':v===0?'zero':cls;return `<div class="w ${c}">${n(v)}</div>`}
+function render(){
+ if(!data){return}
+ const all=data.orders,open=all.filter(o=>!o.closed);
+ $('kOpen').textContent=open.length;
+ $('kW1').textContent=n(open.reduce((a,o)=>a+Math.max(o.wip1,0),0));
+ $('kW2').textContent=n(open.reduce((a,o)=>a+Math.max(o.wip2,0),0));
+ const rows=all.filter(o=>showClosed||!o.closed).sort((a,b)=>(a.closed-b.closed)||((b.wip1+Math.max(b.wip2,0))-(a.wip1+Math.max(a.wip2,0)))||a.name.localeCompare(b.name,'pl'));
+ $('list').innerHTML=rows.length?rows.map(o=>{
+  const base=o.target||o.roll,tags=[];
+  if(o.roll-o.packed-o.pack_waste<0)tags.push('spakowano więcej niż rolek');
+  if(o.wip2<0)tags.push('pobrano do klejenia więcej niż spakowano');
+  if(!o.in_e1)tags.push('brak na liście Etapu 1');
+  return `<div class="o ${o.closed?'closed':''}"><div class="nm">${esc(o.name)}<small>${o.target?'cel '+n(o.target)+' szt.':'bez ilości docelowej'}${o.closed?' · zamknięte':''}</small>${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`
+  +bar('roll',o.roll,base)+wip(o.wip1,'a')+bar('pack',o.packed,base,o.pack_waste?' · braki '+n(o.pack_waste):'')+wip(o.wip2,'b')+bar('glue',o.glued,base,o.rejected?' · odrz. '+n(o.rejected):'')+`</div>`}).join(''):'<div class="empty">Brak zleceń do pokazania.</div>';
+ $('upd').textContent='Dane z '+hm(at);
+}
+async function load(){
+ try{
+  const c=new AbortController(),t=setTimeout(()=>c.abort(),8000);
+  const r=await fetch(URL_HALA+'?t='+Date.now(),{cache:'no-store',signal:c.signal});clearTimeout(t);
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();if(!Array.isArray(j.orders))throw new Error('zły format');
+  data=j;at=Date.now();$('warn').style.display='none';render();
+ }catch(e){
+  $('warn').style.display='block';
+  $('warn').textContent='Brak połączenia z serwerem ('+e.message+').'+(data?' Widać dane z '+hm(at)+'.':'');
+ }
+}
+$('tg').onclick=()=>{showClosed=!showClosed;$('tg').textContent=showClosed?'Ukryj zamknięte':'Pokaż zamknięte';$('tg').setAttribute('aria-pressed',showClosed);render()};
+setInterval(()=>{$('clock').textContent=new Date().toLocaleString('pl-PL',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})},1000);
+setInterval(load,EVERY);load();
+</script></body></html>
