@@ -8,6 +8,7 @@
 html,body{margin:0;background:var(--bg);color:var(--tx);font-family:Bahnschrift,"Segoe UI",system-ui,sans-serif;font-variant-numeric:tabular-nums}
 header{display:flex;align-items:center;gap:2vw;padding:1.2vw 2vw;border-bottom:1px solid var(--line);flex-wrap:wrap}
 h1{font-size:clamp(20px,2.2vw,36px);margin:0;font-weight:600;letter-spacing:.01em}
+h1 small{font-size:clamp(12px,1vw,17px);color:var(--mut);font-weight:400;margin-left:.6em}
 .kpis{display:flex;gap:2.4vw;margin-left:auto}
 .kpi b{display:block;font-size:clamp(24px,3vw,52px);line-height:1;font-weight:600}
 .kpi span{font-size:clamp(12px,1vw,17px);color:var(--mut)}
@@ -31,30 +32,63 @@ main{padding:1vw 2vw 3vw}
 .w{text-align:center;font-size:clamp(22px,2.6vw,46px);font-weight:600;line-height:1}
 .w.a{color:var(--roll)}.w.b{color:var(--pack)}.w.neg{color:var(--bad)}.w.zero{color:var(--line)}
 .empty{padding:6vw 0;text-align:center;color:var(--mut);font-size:clamp(16px,1.6vw,26px)}
+.inv{margin-top:.5em;text-align:center}
+.inv input{width:100%;max-width:9em;background:var(--panel);border:1px solid var(--line);color:var(--tx);border-radius:6px;padding:.35em .5em;font:inherit;font-size:clamp(15px,1.3vw,22px);text-align:center}
+.inv input:focus-visible{outline:2px solid var(--roll);outline-offset:2px}
+.df{font-size:clamp(14px,1.2vw,20px);font-weight:600;margin-top:.3em}
+.df.ok{color:var(--glue)}.df.neg{color:var(--bad)}.df.pos{color:var(--pack)}
+.sm{font-size:clamp(11px,.85vw,14px);color:var(--mut);margin-top:.2em;font-weight:400}
+#invbar{display:none;align-items:center;justify-content:space-between;gap:2vw;flex-wrap:wrap;background:var(--panel);border-bottom:1px solid var(--line);padding:.6vw 2vw;font-size:clamp(13px,1.1vw,18px)}
+#invbar button{background:none;border:1px solid var(--line);color:var(--tx);border-radius:6px;padding:.3em .8em;font:inherit;cursor:pointer}
+.meta button+button{margin-left:.4em}
 @media(max-width:900px){.head{display:none}.o{grid-template-columns:1fr 1fr;gap:3vw}.nm{grid-column:1/-1}}
 </style></head><body>
 <header>
-<h1>Hala · stan zleceń</h1>
+<h1>Hala · stan zleceń <small id="ver"></small></h1>
 <div class="kpis">
 <div class="kpi"><b id="kOpen">–</b><span>zleceń otwartych</span></div>
 <div class="kpi w1"><b id="kW1">–</b><span>WIP 1 (rolki → pakowanie)</span></div>
 <div class="kpi w2"><b id="kW2">–</b><span>WIP 2 (pakowanie → klejenie)</span></div>
 </div>
-<div class="meta"><div id="clock"></div><div id="upd">Ładowanie…</div><button id="tg" aria-pressed="false">Pokaż zamknięte</button></div>
+<div class="meta"><div id="clock"></div><div id="upd">Ładowanie…</div><button id="tg" aria-pressed="false">Pokaż zamknięte</button><button id="iv" aria-pressed="false">Inwentaryzacja WIP</button></div>
 </header>
 <div id="warn" role="status"></div>
+<div id="invbar"><span id="invtxt"></span><button id="ivclr">Wyczyść liczenie</button></div>
 <main>
 <div class="head"><span>Zlecenie</span><span>Etap 1 · rolki</span><span style="text-align:center">WIP 1</span><span>Etap 2 · pakowanie</span><span style="text-align:center">WIP 2</span><span>Etap 3 · klejenie</span></div>
 <div id="list"></div>
 </main>
 <script>
 const URL_HALA='https://hjadatjvyrjexgmicggi.supabase.co/functions/v1/hala-data',EVERY=30000;
-let data=null,at=0,showClosed=false;
+/* Historia wersji (przy każdej zmianie podbij numer):
+   1.0.0 wersja bazowa
+   1.0.1 ukrywanie pustych zleceń spoza listy Etapu 1
+   1.1.0 inwentaryzacja WIP (policzone sztuki vs stan systemowy)
+   1.1.1 numer wersji w nagłówku */
+const APP_VERSION='1.1.1';
+let data=null,at=0,showClosed=false,invMode=false,inv={};
+const INV_KEY='hala_inv_v1';
+try{inv=JSON.parse(localStorage.getItem(INV_KEY)||'{}')||{}}catch(e){inv={}}
+const saveInv=()=>{try{localStorage.setItem(INV_KEY,JSON.stringify(inv))}catch(e){}};
 const $=id=>document.getElementById(id),n=x=>Math.round(x).toLocaleString('pl-PL'),
 esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
 hm=t=>new Date(t).toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
 function bar(cls,val,base,extra){const p=base>0?Math.min(100,val/base*100):0;return `<div><div class="v">${n(val)} <em>${base>0?(val/base*100).toFixed(0)+'%':''}${extra||''}</em></div><div class="bar ${cls}"><i style="width:${p}%"></i></div></div>`}
-function wip(v,cls){const c=v<0?'neg':v===0?'zero':cls;return `<div class="w ${c}">${n(v)}</div>`}
+document.getElementById('ver').textContent='v'+APP_VERSION;document.title='Hala · przegląd zleceń · v'+APP_VERSION;
+function invBlock(o,k){
+ const rec=(inv[o.name]||{})[k],val=rec?rec.c:'';let d='';
+ if(rec){const diff=rec.c-o[k],cls=diff===0?'ok':diff<0?'neg':'pos';
+  d=`<div class="df ${cls}">${diff===0?'zgodne':(diff>0?'+':'−')+n(Math.abs(diff))+(diff>0?' nadwyżka':' brak')}</div>`
+   +(rec.sys!==o[k]?`<div class="sm">system zmienił się od liczenia (było ${n(rec.sys)})</div>`:'')
+   +`<div class="sm">policzono ${hm(rec.t)}</div>`}
+ return `<div class="inv"><input type="number" min="0" step="1" inputmode="numeric" placeholder="policzone" value="${val}" data-o="${esc(o.name)}" data-k="${k}" aria-label="Policzone sztuki, ${esc(o.name)}, ${k==='wip1'?'WIP 1':'WIP 2'}">${d}</div>`}
+function wip(v,cls,o,k){const c=v<0?'neg':v===0?'zero':cls;return `<div class="w ${c}">${n(v)}${invMode&&o&&!o.closed?invBlock(o,k):''}</div>`}
+function invBar(open){
+ const b=$('invbar');b.style.display=invMode?'flex':'none';if(!invMode)return;
+ let cnt=0,s1=0,s2=0;
+ open.forEach(o=>{const r=inv[o.name]||{};if(r.wip1){cnt++;s1+=r.wip1.c-o.wip1}if(r.wip2){cnt++;s2+=r.wip2.c-o.wip2}});
+ const sg=x=>x===0?'0':(x>0?'+':'−')+n(Math.abs(x));
+ $('invtxt').textContent='Inwentaryzacja: policzono '+cnt+' z '+open.length*2+' pozycji · różnica WIP 1: '+sg(s1)+' · różnica WIP 2: '+sg(s2)+' (policzone − system)'}
 function render(){
  if(!data){return}
  const idle=o=>!o.in_e1&&![o.roll,o.packed,o.pack_waste,o.glued,o.glued_all,o.glued_legacy,o.rejected,o.wip1,o.wip2].some(v=>+v),all=data.orders.filter(o=>!idle(o)),open=all.filter(o=>!o.closed);
@@ -68,8 +102,8 @@ function render(){
   if(o.wip2<0)tags.push('pobrano do klejenia więcej niż spakowano');
   if(!o.in_e1)tags.push('brak na liście Etapu 1');
   return `<div class="o ${o.closed?'closed':''}"><div class="nm">${esc(o.name)}<small>${o.target?'cel '+n(o.target)+' szt.':'bez ilości docelowej'}${o.closed?' · zamknięte':''}</small>${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`
-  +bar('roll',o.roll,base)+wip(o.wip1,'a')+bar('pack',o.packed,base,o.pack_waste?' · braki '+n(o.pack_waste):'')+wip(o.wip2,'b')+bar('glue',o.glued_all??o.glued,base,[o.rejected?'odrz. '+n(o.rejected):'',o.glued_legacy?'w tym '+n(o.glued_legacy)+' poza WIP':''].filter(Boolean).map(t=>' · '+t).join(''))+`</div>`}).join(''):'<div class="empty">Brak zleceń do pokazania.</div>';
- $('upd').textContent='Dane z '+hm(at);
+  +bar('roll',o.roll,base)+wip(o.wip1,'a',o,'wip1')+bar('pack',o.packed,base,o.pack_waste?' · braki '+n(o.pack_waste):'')+wip(o.wip2,'b',o,'wip2')+bar('glue',o.glued_all??o.glued,base,[o.rejected?'odrz. '+n(o.rejected):'',o.glued_legacy?'w tym '+n(o.glued_legacy)+' poza WIP':''].filter(Boolean).map(t=>' · '+t).join(''))+`</div>`}).join(''):'<div class="empty">Brak zleceń do pokazania.</div>';
+ $('upd').textContent='Dane z '+hm(at);invBar(open);
 }
 async function load(){
  try{
@@ -77,12 +111,21 @@ async function load(){
   const r=await fetch(URL_HALA+'?t='+Date.now(),{cache:'no-store',signal:c.signal});clearTimeout(t);
   if(!r.ok)throw new Error('HTTP '+r.status);
   const j=await r.json();if(!Array.isArray(j.orders))throw new Error('zły format');
-  data=j;at=Date.now();$('warn').style.display='none';render();
+  data=j;at=Date.now();$('warn').style.display='none';if(!(document.activeElement&&document.activeElement.dataset&&document.activeElement.dataset.k))render();
  }catch(e){
   $('warn').style.display='block';
   $('warn').textContent='Brak połączenia z serwerem ('+e.message+').'+(data?' Widać dane z '+hm(at)+'.':'');
  }
 }
+$('iv').onclick=()=>{invMode=!invMode;$('iv').textContent=invMode?'Zakończ inwentaryzację':'Inwentaryzacja WIP';$('iv').setAttribute('aria-pressed',invMode);render()};
+$('ivclr').onclick=()=>{if(confirm('Usunąć wszystkie wpisane policzone ilości?')){inv={};saveInv();render()}};
+$('list').addEventListener('input',e=>{const el=e.target,k=el.dataset&&el.dataset.k;if(!k)return;
+ const o=data&&data.orders.find(x=>x.name===el.dataset.o);if(!o)return;
+ if(el.value===''){if(inv[o.name]){delete inv[o.name][k];if(!Object.keys(inv[o.name]).length)delete inv[o.name]}}
+ else{const c=Math.max(0,Math.round(+el.value));(inv[o.name]=inv[o.name]||{})[k]={c,sys:o[k],t:Date.now()}}
+ saveInv()});
+$('list').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.k)e.target.blur()});
+$('list').addEventListener('focusout',()=>setTimeout(()=>{const a=document.activeElement;if(!(a&&a.dataset&&a.dataset.k))render()},0));
 $('tg').onclick=()=>{showClosed=!showClosed;$('tg').textContent=showClosed?'Ukryj zamknięte':'Pokaż zamknięte';$('tg').setAttribute('aria-pressed',showClosed);render()};
 setInterval(()=>{$('clock').textContent=new Date().toLocaleString('pl-PL',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})},1000);
 setInterval(load,EVERY);load();
