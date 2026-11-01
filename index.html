@@ -66,8 +66,9 @@ const URL_HALA='https://hjadatjvyrjexgmicggi.supabase.co/functions/v1/hala-data'
    1.1.0 inwentaryzacja WIP (policzone sztuki vs stan systemowy)
    1.1.1 numer wersji w nagłówku
    1.2.0 automatyczne przeładowanie po wdrożeniu nowej wersji; ostrzeżenie o nieaktualnych danych
-   1.2.1 ostrzeżenie czyta pole generated z hala-data (czas serwera vs zegar komputera) */
-const APP_VERSION='1.2.1',STALE_MIN=10,VER_EVERY=300000;
+   1.2.1 ostrzeżenie czyta pole generated z hala-data (czas serwera vs zegar komputera)
+   1.3.0 przy zleceniu etykieta „korekty: …” (suma korekt stanu z Etapów 1–3) */
+const APP_VERSION='1.3.0',STALE_MIN=10,VER_EVERY=300000;
 let data=null,at=0,showClosed=false,invMode=false,inv={};
 const INV_KEY='hala_inv_v1';
 try{inv=JSON.parse(localStorage.getItem(INV_KEY)||'{}')||{}}catch(e){inv={}}
@@ -91,6 +92,7 @@ function invBar(open){
  open.forEach(o=>{const r=inv[o.name]||{};if(r.wip1){cnt++;s1+=r.wip1.c-o.wip1}if(r.wip2){cnt++;s2+=r.wip2.c-o.wip2}});
  const sg=x=>x===0?'0':(x>0?'+':'−')+n(Math.abs(x));
  $('invtxt').textContent='Inwentaryzacja: policzono '+cnt+' z '+open.length*2+' pozycji · różnica WIP 1: '+sg(s1)+' · różnica WIP 2: '+sg(s2)+' (policzone − system)'}
+function corrTxt(o){const c=o.corr;if(!c)return'';const sg=x=>(x>0?'+':'−')+n(Math.abs(x)),p=[['Rolki',c.roll],['Pakowanie',c.packed],['Braki pak.',c.pack_waste],['Klejenie',c.glued],['Odrzuty',c.rejected]].filter(x=>+x[1]).map(x=>x[0]+' '+sg(x[1]));return p.length?`<small>korekty: ${esc(p.join(' · '))}</small>`:''}
 function render(){
  if(!data){return}
  const idle=o=>!o.in_e1&&![o.roll,o.packed,o.pack_waste,o.glued,o.glued_all,o.glued_legacy,o.rejected,o.wip1,o.wip2].some(v=>+v),all=data.orders.filter(o=>!idle(o)),open=all.filter(o=>!o.closed);
@@ -103,7 +105,7 @@ function render(){
   if(o.roll-o.packed-o.pack_waste<0)tags.push('spakowano więcej niż rolek');
   if(o.wip2<0)tags.push('pobrano do klejenia więcej niż spakowano');
   if(!o.in_e1)tags.push('brak na liście Etapu 1');
-  return `<div class="o ${o.closed?'closed':''}"><div class="nm">${esc(o.name)}<small>${o.target?'cel '+n(o.target)+' szt.':'bez ilości docelowej'}${o.closed?' · zamknięte':''}</small>${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`
+  return `<div class="o ${o.closed?'closed':''}"><div class="nm">${esc(o.name)}<small>${o.target?'cel '+n(o.target)+' szt.':'bez ilości docelowej'}${o.closed?' · zamknięte':''}</small>${corrTxt(o)}${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`
   +bar('roll',o.roll,base)+wip(o.wip1,'a',o,'wip1')+bar('pack',o.packed,base,o.pack_waste?' · braki '+n(o.pack_waste):'')+wip(o.wip2,'b',o,'wip2')+bar('glue',o.glued_all??o.glued,base,[o.rejected?'odrz. '+n(o.rejected):'',o.glued_legacy?'w tym '+n(o.glued_legacy)+' poza WIP':''].filter(Boolean).map(t=>' · '+t).join(''))+`</div>`}).join(''):'<div class="empty">Brak zleceń do pokazania.</div>';
  $('upd').textContent='Dane z '+hm(at);invBar(open);
 }
