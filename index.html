@@ -41,7 +41,32 @@ main{padding:1vw 2vw 3vw}
 #invbar{display:none;align-items:center;justify-content:space-between;gap:2vw;flex-wrap:wrap;background:var(--panel);border-bottom:1px solid var(--line);padding:.6vw 2vw;font-size:clamp(13px,1.1vw,18px)}
 #invbar button{background:none;border:1px solid var(--line);color:var(--tx);border-radius:6px;padding:.3em .8em;font:inherit;cursor:pointer}
 .meta button+button{margin-left:.4em}
-@media(max-width:900px){.head{display:none}.o{grid-template-columns:1fr 1fr;gap:3vw}.nm{grid-column:1/-1}}
+.kpi.w3 b.ok{color:var(--glue)}.kpi.w3 b.bad{color:var(--bad)}
+#mag{margin-top:2.2vw}
+#mag h2{font-size:clamp(18px,1.7vw,28px);margin:0 0 .5vw;font-weight:600}#mag h2 small{font-size:clamp(12px,.95vw,16px);color:var(--mut);font-weight:400;margin-left:.6em}
+.mh,.mr{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,.7fr) minmax(0,.8fr) minmax(0,.8fr) minmax(0,2.4fr);gap:1.2vw;align-items:center}
+.mh{color:var(--mut);font-size:clamp(12px,1vw,17px);padding:.4vw 0 .6vw}
+.mr{padding:.8vw 0;border-top:1px solid var(--line)}
+.mr .nm{font-size:clamp(16px,1.6vw,28px)}
+.mn{font-size:clamp(18px,2vw,34px);font-weight:600;text-align:center;line-height:1}.mn small{display:block;font-size:clamp(11px,.85vw,14px);color:var(--mut);font-weight:400;margin-top:.3em}
+.mv{font-size:clamp(14px,1.3vw,22px);margin-bottom:.3em;font-weight:600}.mv.ok{color:var(--glue)}.mv.bad{color:var(--bad)}.mv.na{color:var(--mut);font-weight:400}
+.mbar{height:clamp(10px,1vw,18px);background:var(--panel);border-radius:3px;overflow:hidden}.mbar i{display:block;height:100%}.mbar.ok i{background:var(--glue)}.mbar.bad i{background:var(--bad)}.mbar.na i{background:var(--line)}
+.mo{font-size:clamp(11px,.85vw,14px);color:var(--mut);margin-top:.3em;overflow-wrap:anywhere}
+.ac{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:.9vw 1.1vw}
+.ac h3{margin:0 0 .5vw;font-size:clamp(14px,1.3vw,22px);font-weight:600}
+.ac.s1 h3{color:var(--roll)}.ac.s2 h3{color:var(--pack)}.ac.s3 h3{color:var(--glue)}
+.ar{display:flex;justify-content:space-between;align-items:baseline;gap:1vw;padding:.15em 0;font-size:clamp(12px,1vw,17px);color:var(--mut)}
+.ar b{font-size:clamp(18px,1.9vw,32px);color:var(--tx);font-weight:600}.ar b.ok{color:var(--glue)}.ar b.bad{color:var(--bad)}
+.ar.big b{font-size:clamp(24px,2.6vw,44px)}
+.dl{font-size:clamp(12px,1vw,17px);font-weight:600;margin-left:.6em}.dl.up{color:var(--glue)}.dl.dn{color:var(--pack)}.dl.eq{color:var(--mut)}
+.ac .sm{margin-top:.5em;overflow-wrap:anywhere}
+#act,.rg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2vw}
+#act{margin-bottom:1.6vw}
+#rs{margin-top:2.2vw}#rs h2{font-size:clamp(18px,1.7vw,28px);margin:0 0 .7vw;font-weight:600}#rs h2 small{font-size:clamp(12px,.95vw,16px);color:var(--mut);font-weight:400;margin-left:.6em}
+.rr{display:flex;justify-content:space-between;gap:1vw;padding:.25em 0;border-top:1px solid var(--line);font-size:clamp(13px,1.1vw,19px)}.rr b{font-weight:600}
+.wst{font-weight:600}.wst.bad{color:var(--bad)}
+.nm small.fc{color:var(--mut)}.nm small.fc.bad{color:var(--bad);font-weight:600}
+@media(max-width:900px){#act,.rg{grid-template-columns:1fr}.mh{display:none}.mr{grid-template-columns:1fr 1fr;gap:3vw}.mr .nm{grid-column:1/-1}.mr>:last-child{grid-column:1/-1}.head{display:none}.o{grid-template-columns:1fr 1fr;gap:3vw}.nm{grid-column:1/-1}}
 </style></head><body>
 <header>
 <h1>Hala · stan zleceń <small id="ver"></small></h1>
@@ -49,14 +74,18 @@ main{padding:1vw 2vw 3vw}
 <div class="kpi"><b id="kOpen">–</b><span>zleceń otwartych</span></div>
 <div class="kpi w1"><b id="kW1">–</b><span>WIP 1 (rolki → pakowanie)</span></div>
 <div class="kpi w2"><b id="kW2">–</b><span>WIP 2 (pakowanie → klejenie)</span></div>
+<div class="kpi w3"><b id="kMag">–</b><span>braków bobin</span></div>
 </div>
 <div class="meta"><div id="clock"></div><div id="upd">Ładowanie…</div><button id="tg" aria-pressed="false">Pokaż zamknięte</button><button id="iv" aria-pressed="false">Inwentaryzacja WIP</button></div>
 </header>
 <div id="warn" role="status"></div>
 <div id="invbar"><span id="invtxt"></span><button id="ivclr">Wyczyść liczenie</button></div>
 <main>
+<div id="act"></div>
 <div class="head"><span>Zlecenie</span><span>Etap 1 · rolki</span><span style="text-align:center">WIP 1</span><span>Etap 2 · pakowanie</span><span style="text-align:center">WIP 2</span><span>Etap 3 · klejenie</span></div>
 <div id="list"></div>
+<div id="rs"></div>
+<div id="mag"></div>
 </main>
 <script>
 const URL_HALA='https://hjadatjvyrjexgmicggi.supabase.co/functions/v1/hala-data',EVERY=30000;
@@ -67,8 +96,12 @@ const URL_HALA='https://hjadatjvyrjexgmicggi.supabase.co/functions/v1/hala-data'
    1.1.1 numer wersji w nagłówku
    1.2.0 automatyczne przeładowanie po wdrożeniu nowej wersji; ostrzeżenie o nieaktualnych danych
    1.2.1 ostrzeżenie czyta pole generated z hala-data (czas serwera vs zegar komputera)
-   1.3.0 przy zleceniu etykieta „korekty: …” (suma korekt stanu z Etapów 1–3) */
-const APP_VERSION='1.3.0',STALE_MIN=10,VER_EVERY=300000;
+   1.3.0 przy zleceniu etykieta „korekty: …” (suma korekt stanu z Etapów 1–3)
+   1.4.0 blok „Magazyn bobin”: stan, zapotrzebowanie zleceń otwartych i bilans (dane z bobbin-sync i stock-sync)
+   1.5.0 pasek „Produkcja” (dziś / wczoraj / tydzień na etap, różnica do wczoraj), odsetek odpadu przy zleceniu z kolorem po przekroczeniu progu, przyczyny odpadu z 7 dni, prognoza ukończenia (z terminem, gdy zlecenie go ma), ostatni wpis i obsada zmiany
+   1.5.1 Etap 3: zamiast własnego odsetka odpadu „strata rolek” jak w Etapie 3 (braki pakowania + odrzucone rolki do rolek z Etapu 1), odpad komponentów jako liczba
+   1.5.2 przy zleceniu „termin do ustalenia”, gdy zlecenie nie ma jeszcze daty terminu */
+const APP_VERSION='1.5.2',STALE_MIN=10,VER_EVERY=300000;
 let data=null,at=0,showClosed=false,invMode=false,inv={};
 const INV_KEY='hala_inv_v1';
 try{inv=JSON.parse(localStorage.getItem(INV_KEY)||'{}')||{}}catch(e){inv={}}
@@ -76,7 +109,7 @@ const saveInv=()=>{try{localStorage.setItem(INV_KEY,JSON.stringify(inv))}catch(e
 const $=id=>document.getElementById(id),n=x=>Math.round(x).toLocaleString('pl-PL'),
 esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
 hm=t=>new Date(t).toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
-function bar(cls,val,base,extra){const p=base>0?Math.min(100,val/base*100):0;return `<div><div class="v">${n(val)} <em>${base>0?(val/base*100).toFixed(0)+'%':''}${extra||''}</em></div><div class="bar ${cls}"><i style="width:${p}%"></i></div></div>`}
+function bar(cls,val,base,extra,post){const p=base>0?Math.min(100,val/base*100):0;return `<div><div class="v">${n(val)} <em>${base>0?(val/base*100).toFixed(0)+'%':''}${extra||''}</em></div><div class="bar ${cls}"><i style="width:${p}%"></i></div>${post||''}</div>`}
 document.getElementById('ver').textContent='v'+APP_VERSION;document.title='Hala · przegląd zleceń · v'+APP_VERSION;
 function invBlock(o,k){
  const rec=(inv[o.name]||{})[k],val=rec?rec.c:'';let d='';
@@ -93,6 +126,49 @@ function invBar(open){
  const sg=x=>x===0?'0':(x>0?'+':'−')+n(Math.abs(x));
  $('invtxt').textContent='Inwentaryzacja: policzono '+cnt+' z '+open.length*2+' pozycji · różnica WIP 1: '+sg(s1)+' · różnica WIP 2: '+sg(s2)+' (policzone − system)'}
 function corrTxt(o){const c=o.corr;if(!c)return'';const sg=x=>(x>0?'+':'−')+n(Math.abs(x)),p=[['Rolki',c.roll],['Pakowanie',c.packed],['Braki pak.',c.pack_waste],['Klejenie',c.glued],['Odrzuty',c.rejected]].filter(x=>+x[1]).map(x=>x[0]+' '+sg(x[1]));return p.length?`<small>korekty: ${esc(p.join(' · '))}</small>`:''}
+const STG=[['e1','s1','Etap 1 · rolki'],['e2','s2','Etap 2 · pakowanie'],['e3','s3','Etap 3 · klejenie']];
+const dmy=s=>{const q=String(s).split('-');return q[2]+'.'+q[1]},sgn=x=>x===0?'0':(x>0?'+':'−')+n(Math.abs(x)),
+pc=x=>x.toLocaleString('pl-PL',{minimumFractionDigits:1,maximumFractionDigits:1}),
+dd=s=>new Date(s+'T12:00:00').toLocaleDateString('pl-PL',{weekday:'short',day:'numeric',month:'numeric'});
+function wst(o,k){const w=o.waste&&o.waste[k],thr0=+data.waste_alert_pct||0;
+ if(k==='e3'){const loss=(+o.pack_waste||0)+(+o.rejected||0),p=o.roll>0?loss/o.roll*100:0;
+  return(loss>0&&o.roll>0?`<div class="sm wst ${thr0>0&&p>thr0?'bad':''}">strata rolek ${pc(p)}% · ${n(loss)} rolek</div>`:'')+(w&&w.w>0?`<div class="sm">odpad komponentów ${n(w.w)} szt.</div>`:'')}
+ if(!w||!(w.w>0))return'';const p=w.w/(w.q+w.w)*100,thr=+data.waste_alert_pct||0;
+ return `<div class="sm wst ${thr>0&&p>thr?'bad':''}">odpad ${pc(p)}% · ${n(w.w)} szt.</div>`}
+function fcTxt(o){const f=o.forecast;if(o.closed)return'';
+ const dt=o.due?'termin '+dd(o.due):(o.due_tbd?'termin do ustalenia':'');
+ if(!f)return dt?`<small class="fc">${dt}</small>`:'';
+ let t,cls='';
+ if(f.status==='ok'){t='prognoza: '+dd(f.date)+' · ~'+n(f.pace)+' szt./dzień'+(f.data_days<3?' · mało danych':'');
+  if(o.due){const diff=Math.round((new Date(f.date+'T12:00:00')-new Date(o.due+'T12:00:00'))/864e5);t+=' · termin '+dd(o.due);if(diff>0){cls=' bad';t+=' · '+diff+' dni po terminie'}}
+  else if(o.due_tbd)t+=' · termin do ustalenia'}
+ else if(f.status==='done')t='cel osiągnięty (klejenie)'+(dt?' · '+dt:'');
+ else if(f.status==='no_data')t='prognoza: brak wpisów klejenia'+(dt?' · '+dt:'');
+ else if(f.status==='far')t='prognoza: powyżej 5 lat'+(dt?' · '+dt:'');
+ else return dt?`<small class="fc">${dt}</small>`:'';
+ return `<small class="fc${cls}">${esc(t)}</small>`}
+function renderAct(){
+ const el=$('act'),A=data&&data.activity;
+ if(!A){el.style.display='none';return}
+ el.style.display='';
+ el.innerHTML=STG.map(([k,c,t])=>{const a=A[k];
+  if(!a)return`<div class="ac ${c}"><h3>${t}</h3><div class="sm">brak danych tego etapu</div></div>`;
+  const d=a.today-a.yesterday,dc=d>0?'up':d<0?'dn':'eq',L=a.last,S=a.shift;
+  return `<div class="ac ${c}"><h3>${t}</h3>`
+   +`<div class="ar big"><span>Dziś</span><span><b>${n(a.today)}</b><span class="dl ${dc}">${d>0?'▲ ':d<0?'▼ ':''}${d===0?'jak wczoraj':sgn(d)+' vs wczoraj'}</span></span></div>`
+   +`<div class="ar"><span>Wczoraj</span><b>${n(a.yesterday)}</b></div>`
+   +`<div class="ar"><span>Ten tydzień</span><b>${n(a.week)}</b></div>`
+   +(L?`<div class="sm">Ostatni wpis: ${(L.date===A.date?'':dmy(L.date)+' ')+(L.at?hm(L.at):'')} · ${esc(L.order||'?')} · ${n(L.qty)} szt.${L.waste?' · odpad '+n(L.waste):''}</div>`:'<div class="sm">Brak wpisów</div>')
+   +(S?`<div class="sm">Zmiana ${esc(S.shift||'?')} · ${S.people?'osób: '+S.people:'liczba osób nieznana'}${S.is_today?'':' (ostatnia, '+dmy(S.date)+')'}${S.names&&S.names.length?' · '+esc(S.names.join(', ')):''}</div>`:'')
+   +`</div>`}).join('')}
+function renderRs(){
+ const el=$('rs'),A=data&&data.activity;
+ if(!A){el.innerHTML='';return}
+ const thr=+data.waste_alert_pct||0;
+ el.innerHTML=`<h2>Odpad · przyczyny<small>ostatnie 7 dni${thr>0?' · próg '+n(thr)+'%':''}</small></h2><div class="rg">`+STG.map(([k,c,t])=>{const a=A[k];if(!a)return`<div class="ac ${c}"><h3>${t}</h3><div class="sm">brak danych tego etapu</div></div>`;
+  const tot=a.qty_7d+a.waste_7d,p=tot>0?a.waste_7d/tot*100:0,cls=thr>0&&p>thr?'bad':'ok';
+  return `<div class="ac ${c}"><h3>${t}</h3>`+(k==='e3'?`<div class="ar"><span>Odpad komponentów</span><b>${n(a.waste_7d)} szt.</b></div>`:`<div class="ar"><span>Odsetek odpadu</span><b class="${cls}">${pc(p)}%</b></div>`)
+   +(a.reasons.length?a.reasons.map(r=>`<div class="rr"><span>${esc(r.reason)}</span><b>${n(r.qty)}</b></div>`).join(''):'<div class="sm">brak odpadu w tym okresie</div>')+`</div>`}).join('')+`</div>`}
 function render(){
  if(!data){return}
  const idle=o=>!o.in_e1&&![o.roll,o.packed,o.pack_waste,o.glued,o.glued_all,o.glued_legacy,o.rejected,o.wip1,o.wip2].some(v=>+v),all=data.orders.filter(o=>!idle(o)),open=all.filter(o=>!o.closed);
@@ -105,9 +181,9 @@ function render(){
   if(o.roll-o.packed-o.pack_waste<0)tags.push('spakowano więcej niż rolek');
   if(o.wip2<0)tags.push('pobrano do klejenia więcej niż spakowano');
   if(!o.in_e1)tags.push('brak na liście Etapu 1');
-  return `<div class="o ${o.closed?'closed':''}"><div class="nm">${esc(o.name)}<small>${o.target?'cel '+n(o.target)+' szt.':'bez ilości docelowej'}${o.closed?' · zamknięte':''}</small>${corrTxt(o)}${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`
-  +bar('roll',o.roll,base)+wip(o.wip1,'a',o,'wip1')+bar('pack',o.packed,base,o.pack_waste?' · braki '+n(o.pack_waste):'')+wip(o.wip2,'b',o,'wip2')+bar('glue',o.glued_all??o.glued,base,[o.rejected?'odrz. '+n(o.rejected):'',o.glued_legacy?'w tym '+n(o.glued_legacy)+' poza WIP':''].filter(Boolean).map(t=>' · '+t).join(''))+`</div>`}).join(''):'<div class="empty">Brak zleceń do pokazania.</div>';
- $('upd').textContent='Dane z '+hm(at);invBar(open);
+  return `<div class="o ${o.closed?'closed':''}"><div class="nm">${esc(o.name)}<small>${o.target?'cel '+n(o.target)+' szt.':'bez ilości docelowej'}${o.closed?' · zamknięte':''}</small>${corrTxt(o)}${fcTxt(o)}${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`
+  +bar('roll',o.roll,base,'',wst(o,'e1'))+wip(o.wip1,'a',o,'wip1')+bar('pack',o.packed,base,o.pack_waste?' · braki '+n(o.pack_waste):'',wst(o,'e2'))+wip(o.wip2,'b',o,'wip2')+bar('glue',o.glued_all??o.glued,base,[o.rejected?'odrz. '+n(o.rejected):'',o.glued_legacy?'w tym '+n(o.glued_legacy)+' poza WIP':''].filter(Boolean).map(t=>' · '+t).join(''),wst(o,'e3'))+`</div>`}).join(''):'<div class="empty">Brak zleceń do pokazania.</div>';
+ $('upd').textContent='Dane z '+hm(at);invBar(open);renderAct();renderRs();renderMag();
 }
 async function load(){
  try{
@@ -148,4 +224,44 @@ async function checkVersion(){
 }
 setInterval(checkVersion,VER_EVERY);
 setInterval(load,EVERY);load();
+/* ===== Magazyn bobin ===== */
+const BASE=URL_HALA.replace(/hala-data$/,''),URL_ROLL=BASE+'bobbin-sync',URL_STOCK=BASE+'stock-sync',MAG_EVERY=300000;
+let mag=null,magAt=0,magErr='';
+async function getJ(u){const c=new AbortController(),t=setTimeout(()=>c.abort(),20000);try{const r=await fetch(u+'?t='+Date.now(),{cache:'no-store',signal:c.signal});if(!r.ok)throw new Error(u.split('/').pop()+' HTTP '+r.status);return await r.json()}finally{clearTimeout(t)}}
+async function loadMag(){
+ try{
+  const [d,s]=await Promise.all([getJ(URL_ROLL),getJ(URL_STOCK)]),dd=(d&&d.data)||d||{},st=dd.settings||{};
+  mag={orders:dd.orders||[],entries:dd.entries||[],items:(s&&s.items)||{},cfg:{papers:(st.paper_types||[]).map(String),caps:st.capacities||[3000],lengths:st.roll_lengths||[6],waste:st.waste_rate_pct??1,defPaper:st.default_paper||''}};
+  magAt=Date.now();magErr='';
+ }catch(e){magErr=e.message||'błąd'}
+ renderMag()}
+function magModel(){
+ const M=mag,c=M.cfg,B={},lat={},R={},need={},key=x=>(x.date||'')+'|'+String(+x.created||0).padStart(15,'0');
+ M.entries.forEach(x=>{if(!x.bobbin_id)return;const t=+x.created||0,b=B[x.bobbin_id];if(!b||(t&&(!b.t||t<b.t)))B[x.bobbin_id]={t,p:x.paper||'',c:+(x.bobbin_m||x.capacity)||0};if(!lat[x.bobbin_id]||key(x)>=key(lat[x.bobbin_id]))lat[x.bobbin_id]=x});
+ const used=(p,cp,ts)=>Object.values(B).filter(b=>b.p===p&&b.c===+cp&&b.t>ts).length;
+ Object.values(lat).forEach(x=>{if((x.done||x.completed)!=='TAK'&&+x.remaining_m>0){const p=x.paper||'';R[p]=(R[p]||0)+(+x.remaining_m)}});
+ const w=Math.min(Math.max((+c.waste||0)/100,0),.95);
+ ((data&&data.orders)||[]).filter(h=>!h.closed&&h.target>0).forEach(h=>{
+  const left=Math.max(h.target-(+h.roll||0),0);if(left<=0)return;
+  const od=M.orders.find(z=>z.name===h.name)||{},l=M.entries.filter(x=>x.order===h.name).at(-1)||{},
+   pp=od.paper||l.paper||c.defPaper||c.papers[0]||'',cap=+od.cap||+(l.bobbin_m||l.capacity)||+c.caps[0]||3000,len=+od.len||+(l.roll_length_m||l.length)||+c.lengths[0]||6,
+   k=pp+'|'+cap,n=need[k]||(need[k]={m:0,o:[],cr:0});n.m+=left*len/(1-w);n.o.push(h.name)});
+ Object.keys(R).forEach(p=>{let cr=R[p];Object.keys(need).filter(k=>k.slice(0,k.lastIndexOf('|'))===p).sort((a,b)=>need[b].m-need[a].m).forEach(k=>{const t=Math.min(cr,need[k].m);need[k].m-=t;need[k].cr+=t;cr-=t})});
+ const keys=new Set(Object.keys(M.items).concat(Object.keys(need)));
+ return[...keys].map(k=>{const i=k.lastIndexOf('|'),p=k.slice(0,i),cp=+k.slice(i+1),it=M.items[k],n=need[k],nn=n?Math.ceil(n.m/(cp||1)-1e-9):0,cur=it?it.q-used(p,cp,it.ts):null;
+  return{p,cp,it,cur,nn,bal:cur==null?null:cur-nn,o:n?n.o:[],cr:n?n.cr:0}})
+  .sort((a,b)=>((a.bal!=null&&a.bal<0)?0:(a.bal==null&&a.nn?1:2))-((b.bal!=null&&b.bal<0)?0:(b.bal==null&&b.nn?1:2))||(a.bal??0)-(b.bal??0)||a.p.localeCompare(b.p,'pl')||a.cp-b.cp)}
+function renderMag(){
+ const el=$('mag'),k=$('kMag');if(!el)return;
+ if(!mag){el.innerHTML=magErr?`<div class="empty">Brak danych magazynowych (${esc(magErr)})</div>`:'';k.textContent='–';k.className='';return}
+ let rows;try{rows=magModel()}catch(e){el.innerHTML='<div class="empty">Błąd obliczeń magazynu</div>';return}
+ const short=rows.filter(r=>r.bal!=null&&r.bal<0).length;
+ k.textContent=short;k.className=short?'bad':'ok';
+ const dm=t=>new Date(t).toLocaleDateString('pl-PL',{day:'numeric',month:'numeric'});
+ el.innerHTML=`<h2>Magazyn bobin<small>stan z liczenia pomniejszony o rozpoczęte bobiny · potrzeba dla zleceń otwartych, po odjęciu resztek</small></h2><div class="mh"><span>Typ papieru</span><span style="text-align:center">Bobina</span><span style="text-align:center">Stan [szt.]</span><span style="text-align:center">Potrzeba [szt.]</span><span>Bilans</span></div>`+
+ (rows.length?rows.map(r=>{
+  const cls=r.bal==null?'na':r.bal<0?'bad':'ok',txt=r.bal==null?(r.nn?'brak danych o stanie':'—'):r.bal<0?'brakuje '+n(-r.bal):(r.nn?'wystarczy · zapas '+n(r.bal):'zapas '+n(r.bal)),
+   pc=r.bal==null?0:r.nn?Math.min(100,Math.max(0,r.cur/r.nn*100)):100;
+  return `<div class="mr"><div class="nm">${esc(r.p||'(bez typu)')}</div><div class="mn">${n(r.cp)} m</div><div class="mn">${r.cur==null?'–':n(r.cur)}<small>${r.it?'liczone '+dm(r.it.ts):'nie policzono'}</small></div><div class="mn">${r.nn?n(r.nn):'–'}</div><div><div class="mv ${cls}">${txt}</div><div class="mbar ${cls}"><i style="width:${pc}%"></i></div>${r.o.length?`<div class="mo">${esc(r.o.slice(0,6).join(', ')+(r.o.length>6?' +'+(r.o.length-6):'')+(r.cr?' · odjęto resztki '+n(r.cr)+' m':''))}</div>`:''}</div></div>`}).join(''):'<div class="empty">Brak pozycji magazynowych. Policz stan w Etapie 1 → Magazyn.</div>')}
+setInterval(loadMag,MAG_EVERY);loadMag();
 </script></body></html>
